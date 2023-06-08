@@ -1,0 +1,2 @@
+# does the network of foreign data see english or shape to point out th plate?
+# fix the korean plate to foreign, data and the amount of plate pictures will be good to correspond to the image dataset  
