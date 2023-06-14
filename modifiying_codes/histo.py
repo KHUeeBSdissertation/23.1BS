@@ -1,3 +1,5 @@
+# latest
+
 import matplotlib.pyplot as plt
 from scipy import stats
 import numpy as np
@@ -8,7 +10,17 @@ import os.path
 from tqdm import tqdm
 import math
 import cv2
+from torchvision.transforms import ToTensor
+import torch
+import argparse
 
+parser = argparse.ArgumentParser(description='이 프로그램의 설명(그 외 기타등등 아무거나)')    # 2. parser를 만든다.
+
+# 3. parser.add_argument로 받아들일 인수를 추가해나간다.
+parser.add_argument('-l', '--level', help='set level', type=int)    # 필요한 인수를 추가
+args = parser.parse_args()
+
+L = args.level
 def load_images():
     img_path = './darkness/'
     imgs = []
@@ -57,35 +69,62 @@ def print_histogram(_histrogram, name, title):
 
 def generate_histogram(img, print, index):
     if len(img.shape) == 3: # img is colorful
-        # gr_img = img[0]
-        # gr_img = img[1]
-        # gr_img = img[2]
-        for i in range(3):
-            gr_hist = np.zeros([256])
+        img = torch.as_tensor(np.array(img, copy=True))
+        img = img.view(img.size[1], img.size[0], len(img.getbands()))
+        # put it from HWC to CHW format
+        img = img.permute((2, 0, 1))
+        # gr_img = np.mean(img, axis=-1)
+        Bimg = img[0]
+        '''now we calc grayscale histogram'''
+        B_hist = np.zeros([256])
+        for x_pixel in range(Bimg.shape[0]):
+            for y_pixel in range(Bimg.shape[1]):
+                pixel_value = int(Bimg[x_pixel, y_pixel])
+                B_hist[pixel_value] += 1
+        '''normalize Histogram'''
+        B_hist /= (Bimg.shape[0] * Bimg.shape[1])
 
-            for x_pixel in range(img[i].shape[0]):
-                for y_pixel in range(img[i].shape[1]):
-                    pixel_value = int(img[i][x_pixel, y_pixel])
-                    gr_hist[pixel_value] += 1
+        Gimg = img[1]
+        '''now we calc green img histogram'''
+        G_hist = np.zeros([256])
+        for x_pixel in range(Gimg.shape[0]):
+            for y_pixel in range(Gimg.shape[1]):
+                pixel_value = int(Gimg[x_pixel, y_pixel])
+                G_hist[pixel_value] += 1
+        '''normalize Histogram'''
+        G_hist /= (Gimg.shape[0] * Gimg.shape[1])
+
+        Rimg = img[2]
+        '''now we calc red img  histogram'''
+        R_hist = np.zeros([256])
+        for x_pixel in range(Rimg.shape[0]):
+            for y_pixel in range(Rimg.shape[1]):
+                pixel_value = int(Rimg[x_pixel, y_pixel])
+                R_hist[pixel_value] += 1
+        '''normalize Histogram'''
+        R_hist /= (Rimg.shape[0] * Rimg.shape[1])
+
+        if print:
+            print_histogram(R_hist, name="RED_neq_"+str(index), title="R_Normalized Histogram")
+            print_histogram(G_hist, name="GREEN_neq_"+str(index), title="G_Normalized Histogram")
+            print_histogram(B_hist, name="BLUE_neq_"+str(index), title="B_Normalized Histogram")
+        return B_hist, G_hist, R_hist, img
+
+
+    else:
+        gr_img = img
+
+        '''now we calc grayscale histogram'''
+        gr_hist = np.zeros([256])
+        for x_pixel in range(gr_img.shape[0]):
+            for y_pixel in range(gr_img.shape[1]):
+                pixel_value = int(gr_img[x_pixel, y_pixel])
+                gr_hist[pixel_value] += 1
         '''normalize Histogram'''
         gr_hist /= (gr_img.shape[0] * gr_img.shape[1])
         if print:
             print_histogram(gr_hist, name="neq_"+str(index), title="Normalized Histogram")
-        
-    else:
-        gr_img = img
-    '''now we calc grayscale histogram'''
-    gr_hist = np.zeros([256])
-
-    for x_pixel in range(gr_img.shape[0]):
-        for y_pixel in range(gr_img.shape[1]):
-            pixel_value = int(gr_img[x_pixel, y_pixel])
-            gr_hist[pixel_value] += 1
-    '''normalize Histogram'''
-    gr_hist /= (gr_img.shape[0] * gr_img.shape[1])
-    if print:
-        print_histogram(gr_hist, name="neq_"+str(index), title="Normalized Histogram")
-    return gr_hist, gr_img
+        return gr_hist, gr_img
 
 
 def equalize_histogram(img, histo, L):
@@ -134,7 +173,7 @@ def match_histogram(inp_img, hist_input, e_hist_input, e_hist_target, _print=Tru
 
 
 if __name__ == '__main__':
-    L=50
+    # L=args.level
     print("\r\nLoading Images:")
     imgs = load_images()
     print("\r\ngenerating HistogramS:")
@@ -146,6 +185,6 @@ if __name__ == '__main__':
         hist_img, gr_img = generate_histogram(img, print=True, index=index)
         gr_hist_arr.append(hist_img)
         gr_img_arr.append(gr_img)
-        eq_hist_arr.append(equalize_histogram(gr_img, hist_img, L))
+        eq_hist_arr.append(equalize_histogram(gr_img, hist_img, args.level))
         index += 1
     match_histogram(inp_img=gr_img_arr[0], hist_input=gr_hist_arr[0], e_hist_input=eq_hist_arr[0], e_hist_target=eq_hist_arr[1])
