@@ -7,12 +7,22 @@ import random
 # from PIL import Image, ImageEnhance
 
 
+import argparse
+
+parser = argparse.ArgumentParser(description='이 프로그램의 설명(그 외 기타등등 아무거나)')    # 2. parser를 만든다.
+
+# 3. parser.add_argument로 받아들일 인수를 추가해나간다.
+parser.add_argument('-c', '--carimg', help='car img number', type=int)    # 필요한 인수를 추가
+parser.add_argument('-l', '--lpimg', help='license plate img number', type=int)    # 필요한 인수를 추가
+args = parser.parse_args()
+
 path_dir = '/home/percv-d0/dyn/2023.1_BSpaper/Korean-license-plate-Generator'
+# change the directorys below to change the directories for saving 
 kset_dir = '/home/percv-d0/dyn/2023.1_BSpaper/datasets/klicense_dataset/images/train'
 anno_dir = '/home/percv-d0/dyn/2023.1_BSpaper/datasets/klicense_dataset/labels/train'
 
-carim_num = 20
-lpimg_num = 20
+carim_num = args.carimg
+lpimg_num = args.carimg
 
  # all directories of car images in list
 # car_img_dir = os.path.join(path_dir, "dataset/images")

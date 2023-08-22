@@ -23,5 +23,7 @@ yolov5/wandb/
 *.zip
 __pycache__
 datasets/
+# /yolov5/runs/
 /yolov5/runs/
 yolov5/my-awesome-project/
+yolov5/wandb
